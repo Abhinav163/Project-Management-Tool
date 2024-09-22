@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -8,23 +8,26 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [username, setUsername] = useState('');
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation(); // Get the current location
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
-        // Fetch user role from Firestore
         const userDoc = doc(db, 'users', user.uid);
         const docSnap = await getDoc(userDoc);
         if (docSnap.exists()) {
           setUserRole(docSnap.data().role);
+          setUsername(docSnap.data().username);
         }
       } else {
         setUser(null);
         setUserRole(null);
+        setUsername('');
       }
     });
 
@@ -53,6 +56,8 @@ const Navbar = () => {
         console.log('User signed out');
         setUser(null);
         setUserRole(null);
+        setUsername('');
+        navigate('/login'); // Navigate to the login page
       })
       .catch((error) => {
         console.error('Error signing out:', error);
@@ -63,37 +68,65 @@ const Navbar = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  const handleDashboardClick = () => {
+    navigate(userRole === 'admin' ? '/admin-dashboard' : '/teammate-dashboard');
+  };
+
+  // Define paths for each button
+  const dashboardPath = userRole === 'admin' ? '/admin-dashboard' : '/teammate-dashboard';
+  const projectsPath = '/projects';
+  const tasksPath = '/tasks';
+
+  // Determine if the buttons are active based on the current location
+  const isDashboardActive = location.pathname === dashboardPath;
+  const isProjectsActive = location.pathname === projectsPath;
+  const isTasksActive = location.pathname === tasksPath;
+
   return (
     <nav className="bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg p-4">
       <div className="container mx-auto flex justify-end items-center">
         <ul className="flex space-x-6">
           <li>
             {userRole ? (
-              <Link
-                to={userRole === 'admin' ? '/admin-dashboard' : '/teammate-dashboard'}
-                className="text-white text-lg font-semibold hover:text-yellow-300 transition duration-300 ease-in-out"
+              <button
+                onClick={handleDashboardClick}
+                style={{
+                  color: isDashboardActive ? 'gold' : 'white',
+                  cursor: 'pointer',
+                }}
+                className="text-lg font-semibold transition duration-300 ease-in-out hover:text-yellow-300"
               >
                 Dashboard
-              </Link>
+              </button>
             ) : (
-              <span className="text-white text-lg font-semibold">Dashboard</span>
+              <span className="text-white text-lg font-semibold cursor-not-allowed">
+                Dashboard
+              </span>
             )}
           </li>
           <li>
-            <Link
-              to="/projects"
-              className="text-white text-lg font-semibold hover:text-yellow-300 transition duration-300 ease-in-out"
+            <span
+              style={{
+                color: isProjectsActive && user ? 'gold' : user ? 'white' : 'gray',
+                cursor: user ? 'pointer' : 'not-allowed',
+              }}
+              className="text-lg font-semibold"
+              onClick={user ? () => navigate(projectsPath) : null}
             >
               Projects
-            </Link>
+            </span>
           </li>
           <li>
-            <Link
-              to="/tasks"
-              className="text-white text-lg font-semibold hover:text-yellow-300 transition duration-300 ease-in-out"
+            <span
+              style={{
+                color: isTasksActive && user ? 'gold' : user ? 'white' : 'gray',
+                cursor: user ? 'pointer' : 'not-allowed',
+              }}
+              className="text-lg font-semibold"
+              onClick={user ? () => navigate(tasksPath) : null}
             >
               Tasks
-            </Link>
+            </span>
           </li>
           {user ? (
             <li className="relative">
@@ -102,7 +135,7 @@ const Navbar = () => {
                 onClick={toggleDropdown}
                 className="text-white text-lg font-semibold hover:text-yellow-300 transition duration-300 ease-in-out"
               >
-                {user.displayName ? user.displayName : user.email}
+                {username || user.email}
               </button>
               {isDropdownOpen && (
                 <div

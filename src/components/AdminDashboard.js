@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, getDocs, updateDoc, doc, arrayUnion, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, doc, arrayUnion, onSnapshot, deleteDoc } from 'firebase/firestore';
 
 const AdminDashboard = () => {
   const [teammates, setTeammates] = useState([]);
@@ -84,6 +84,19 @@ const AdminDashboard = () => {
     });
   };
 
+  const handleDeleteTask = async (taskId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this task?");
+    if (confirmDelete) {
+      try {
+        await deleteDoc(doc(db, 'tasks', taskId));
+        alert('Task deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting task: ', error);
+        alert('Failed to delete the task. Please try again.');
+      }
+    }
+  };
+
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
@@ -152,14 +165,22 @@ const AdminDashboard = () => {
                   </p>
                   <p className="text-sm text-gray-600">Progress: {task.progress}%</p>
                 </div>
-                <button
-                  onClick={() => handleToggleTaskCompletion(task.id, task.completed)}
-                  className={`py-2 px-4 rounded-md ${
-                    task.completed ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
-                  }`}
-                >
-                  {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
-                </button>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleToggleTaskCompletion(task.id, task.completed)}
+                    className={`py-2 px-4 rounded-md ${
+                      task.completed ? 'bg-red-500 text-white' : 'bg-green-500 text-white'
+                    }`}
+                  >
+                    {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTask(task.id)}
+                    className="py-2 px-4 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    Delete Task
+                  </button>
+                </div>
               </div>
             </li>
           ))}

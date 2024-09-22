@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { collection, query, where, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 
@@ -10,10 +10,11 @@ const TeammateDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [teammates, setTeammates] = useState([]);
+  const [selectedTask, setSelectedTask] = useState(null);
 
   const fetchTeammates = useCallback(async () => {
     try {
-      const teammatesSnapshot = await getDoc(collection(db, 'users'));
+      const teammatesSnapshot = await getDocs(collection(db, 'users'));
       const fetchedTeammates = [];
       teammatesSnapshot.forEach((doc) => {
         const data = doc.data();
@@ -83,8 +84,12 @@ const TeammateDashboard = () => {
     }
   };
 
+  const handleTaskClick = (task) => {
+    setSelectedTask(task);
+  };
+
   const TaskItem = ({ task, isUserTask }) => (
-    <li key={task.id} className="border p-4 my-2 rounded-lg shadow-sm">
+    <li key={task.id} className="border p-4 my-2 rounded-lg shadow-sm cursor-pointer" onClick={() => handleTaskClick(task)}>
       <h4 className="font-semibold text-lg">{task.taskName}</h4>
       <p className="text-gray-600 mt-1">{task.description}</p>
       {isUserTask ? (
@@ -130,7 +135,7 @@ const TeammateDashboard = () => {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Teammate Dashboard</h1>
-      <h2 className="text-xl mt-2 mb-4">Welcome, {currentUser?.displayName || 'Teammate'}</h2>
+      <h2 className="text-xl mt-2 mb-4">Hi {currentUser?.displayName || 'Teammate'}, welcome to the dashboard</h2>
       
       <div className="mb-8">
         <h3 className="text-2xl font-semibold mb-4">Your Tasks</h3>
@@ -157,6 +162,23 @@ const TeammateDashboard = () => {
           <p className="text-gray-500">There are no team tasks to display at the moment.</p>
         )}
       </div>
+
+      {/* Display task details */}
+      {selectedTask && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
+            <h3 className="text-xl font-bold mb-4">{selectedTask.taskName}</h3>
+            <p className="mb-4">{selectedTask.description}</p>
+            <p className="mb-4">Deadline: {selectedTask.deadline?.toDate().toLocaleDateString() || 'Not Set'}</p>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
+              onClick={() => setSelectedTask(null)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

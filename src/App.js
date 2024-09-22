@@ -4,11 +4,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
+import Projects from './components/Projects';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import AdminDashboard from './components/AdminDashboard';
 import TeammateDashboard from './components/TeammateDashboard';
 import PrivateRoute from './components/PrivateRoutes';
+import Tasks from './components/Tasks';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -62,16 +64,12 @@ const App = () => {
         <Router>
           <Navbar />
           <Routes>
+            <Route path="/projects" element={<Projects/>} />
             <Route path="/login" element={<Login />} />
+            <Route path="/task" element={<Tasks/>}/>
             <Route path="/signup" element={<Signup />} />
-            <Route
-              path="/admin-dashboard"
-              element={<PrivateRoute element={<AdminDashboard />} requiredRole="admin" />}
-            />
-            <Route
-              path="/teammate-dashboard"
-              element={<PrivateRoute element={<TeammateDashboard />} requiredRole="teammate" />}
-            />
+            <Route path="/admin-dashboard" element={<PrivateRoute element={<AdminDashboard />} requiredRole="admin" />}/>
+            <Route path="/teammate-dashboard" element={<PrivateRoute element={<TeammateDashboard />} requiredRole="teammate" />}/>
             <Route path="/" element={<Home />} />
           </Routes>
         </Router>

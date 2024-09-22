@@ -1,43 +1,36 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { auth, db } from '../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../firebase';  // Import auth from firebase
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
     try {
-      await login(email, password);
-
-      // Get the current user
+      await signInWithEmailAndPassword(auth, email, password);
       const user = auth.currentUser;
-      if (user) {
-        // Fetch user role from Firestore
-        const userDoc = doc(db, 'users', user.uid);
-        const userSnapshot = await getDoc(userDoc);
-        const userData = userSnapshot.data();
 
-        if (userData) {
-          const { role } = userData;
-          if (role === 'admin') {
-            navigate('/admin-dashboard');
-          } else if (role === 'teammate') {
-            navigate('/teammate-dashboard');
-          } else {
-            setError('Invalid role');
-          }
+      if (user) {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userRole = userDoc.data().role;
+
+        if (userRole === 'admin') {
+          navigate('/admin-dashboard');
+        } else if (userRole === 'teammate') {
+          navigate('/teammate-dashboard');
         } else {
-          setError('User data not found');
+          setError('Invalid role');
         }
+      } else {
+        setError('User not found');
       }
     } catch (error) {
       setError('Failed to log in');
@@ -46,41 +39,38 @@ const Login = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Login
-          </button>
-          {error && <p className="text-red-500 text-center">{error}</p>}
-        </form>
-        <p className="mt-4 text-center">
+    <div className="login-container p-6 max-w-md mx-auto bg-white rounded-md shadow-md">
+      <form onSubmit={handleLogin} className="space-y-4">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          className="w-full p-2 border border-gray-300 rounded-md"
+          required
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          className="w-full p-2 border border-gray-300 rounded-md"
+          required
+        />
+        <button
+          type="submit"
+          className="w-full py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition duration-300"
+        >
+          Login
+        </button>
+        <p className="text-center">
           Don't have an account?{' '}
           <a href="/signup" className="text-blue-500 hover:underline">
-            Sign Up
+            Sign up
           </a>
         </p>
-      </div>
+        {error && <p className="text-red-500">{error}</p>}
+      </form>
     </div>
   );
 };
