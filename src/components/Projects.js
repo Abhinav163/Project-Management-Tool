@@ -13,8 +13,7 @@ const Projects = () => {
   const [role, setRole] = useState('');
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
-  const [primaryTeammate, setPrimaryTeammate] = useState('');
-  const [secondaryTeammate, setSecondaryTeammate] = useState('');
+  const [selectedTeammates, setSelectedTeammates] = useState(['']);
 
   useEffect(() => {
     const fetchProjectsAndRole = async () => {
@@ -82,7 +81,7 @@ const Projects = () => {
               const projectData = docSnapshot.data();
               const teammatesUsernames = await Promise.all(
                 projectData.teammates.map(async teammateId => {
-                  // Fetch each teammate's username using their ID
+                  if (!teammateId) return 'Unknown User'; // Avoid invalid teammateId
                   const userDoc = await getDoc(doc(db, 'users', teammateId));
                   return userDoc.exists() ? userDoc.data().username || 'Unnamed User' : 'Unknown User';
                 })
@@ -90,7 +89,7 @@ const Projects = () => {
               return {
                 id: docSnapshot.id,
                 ...projectData,
-                teammatesUsernames, // Store teammate usernames
+                teammatesUsernames,
               };
             })
           );
@@ -106,7 +105,7 @@ const Projects = () => {
               const projectData = docSnapshot.data();
               const teammatesUsernames = await Promise.all(
                 projectData.teammates.map(async teammateId => {
-                  // Fetch each teammate's username using their ID
+                  if (!teammateId) return 'Unknown User'; // Avoid invalid teammateId
                   const userDoc = await getDoc(doc(db, 'users', teammateId));
                   return userDoc.exists() ? userDoc.data().username || 'Unnamed User' : 'Unknown User';
                 })
@@ -114,7 +113,7 @@ const Projects = () => {
               return {
                 id: docSnapshot.id,
                 ...projectData,
-                teammatesUsernames, // Store teammate usernames
+                teammatesUsernames,
               };
             })
           );
@@ -135,8 +134,8 @@ const Projects = () => {
   }, [role, currentUser]);
 
   const handleCreateProject = async () => {
-    if (!primaryTeammate) {
-      alert('Primary teammate selection is mandatory.');
+    if (!selectedTeammates[0]) {
+      alert('At least one teammate selection is mandatory.');
       return;
     }
 
@@ -144,15 +143,14 @@ const Projects = () => {
       const newProject = {
         title: projectName,
         description: projectDescription,
-        teammates: [primaryTeammate, secondaryTeammate].filter(Boolean), // Adds only selected teammates
+        teammates: selectedTeammates.filter(Boolean), // Adds only selected teammates
         progress: 0,
       };
 
       await addDoc(collection(db, 'projects'), newProject);
       setProjectName('');
       setProjectDescription('');
-      setPrimaryTeammate('');
-      setSecondaryTeammate('');
+      setSelectedTeammates(['']);
       alert('Project created successfully!');
       const projectsSnapshot = await getDocs(collection(db, 'projects'));
       const fetchedProjects = projectsSnapshot.docs.map(doc => ({
@@ -166,82 +164,74 @@ const Projects = () => {
     }
   };
 
-  const handlePrimaryTeammateChange = (e) => {
-    setPrimaryTeammate(e.target.value);
-    setSecondaryTeammate(''); // Reset secondary teammate selection
+  const handleTeammateChange = (index, value) => {
+    const updatedTeammates = [...selectedTeammates];
+    updatedTeammates[index] = value;
+    setSelectedTeammates(updatedTeammates);
+
+    // Add an empty field for the next dropdown if the current selection is valid
+    if (value && index === selectedTeammates.length - 1 && selectedTeammates.length < 5) {
+      setSelectedTeammates([...updatedTeammates, '']);
+    }
   };
 
-  // Filter teammates for the secondary selection (excluding the primary teammate)
-  const filteredTeammatesForSecondary = teammates.filter(
-    (teammate) => teammate.id !== primaryTeammate
-  );
+  // Filter teammates for the dropdown, ensuring no duplicates
+  const filteredTeammates = (selectedTeammates) =>
+    teammates.filter((teammate) => !selectedTeammates.includes(teammate.id));
 
   if (loading) {
-    return <div>Loading projects...</div>;
+    return <div className="text-center mt-10 text-xl">Loading projects...</div>;
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Projects</h1>
-      {error && <p className="text-red-500">Error: {error}</p>}
-
+    <div className="p-6">
+      <h1 className="text-4xl font-extrabold mb-6 text-center text-gray-800">Projects</h1>
+      {error && <p className="text-red-500 mb-4">Error: {error}</p>}
+  
       {/* Display Create Project Button for Admins */}
       {role === 'admin' && (
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold mb-4">Create a New Project</h2>
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4">Create a New Project</h2>
           <input
             type="text"
             placeholder="Project Name"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
-            className="mb-2 p-2 border rounded-md w-full"
+            className="mb-4 p-3 border-2 border-gray-300 rounded-lg w-full focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
           />
           <textarea
             placeholder="Project Description"
             value={projectDescription}
             onChange={(e) => setProjectDescription(e.target.value)}
-            className="mb-2 p-2 border rounded-md w-full"
+            className="mb-4 p-3 border-2 border-gray-300 rounded-lg w-full focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
           />
-
-          {/* Primary Teammate Selector (Mandatory) */}
-          <select
-            value={primaryTeammate}
-            onChange={handlePrimaryTeammateChange}
-            className="mb-2 p-2 border rounded-md w-full"
-            required
-          >
-            <option value="">Select Teammate 1</option>
-            {teammates.map((teammate) => (
-              <option key={teammate.id} value={teammate.id}>
-                {teammate.username || teammate.email || 'Unnamed User'}
-              </option>
-            ))}
-          </select>
-
-          {/* Secondary Teammate Selector (Optional) */}
-          <select
-            value={secondaryTeammate}
-            onChange={(e) => setSecondaryTeammate(e.target.value)}
-            className="mb-2 p-2 border rounded-md w-full"
-            disabled={!primaryTeammate} // Disable if primary teammate is not selected
-          >
-            <option value="">Select Teammate 2</option>
-            {filteredTeammatesForSecondary.map((teammate) => (
-              <option key={teammate.id} value={teammate.id}>
-                {teammate.username || teammate.email || 'Unnamed User'}
-              </option>
-            ))}
-          </select>
-
+  
+          {/* Teammate Selectors */}
+          {selectedTeammates.map((teammateId, index) => (
+            <select
+              key={index}
+              value={teammateId}
+              onChange={(e) => handleTeammateChange(index, e.target.value)}
+              className="mb-2 p-3 border-2 border-gray-300 rounded-lg w-full focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200"
+            >
+              <option value="">Select Teammate {index + 1}</option>
+              {filteredTeammates(selectedTeammates).map((teammate) => (
+                <option key={teammate.id} value={teammate.id}>
+                  {teammate.username || teammate.email || 'Unnamed User'}
+                </option>
+              ))}
+            </select>
+          ))}
+  
           <button
             onClick={handleCreateProject}
-            className="bg-purple-600 text-white py-2 px-6 rounded-full shadow-md hover:bg-purple-700 transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75"
+            className="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-semibold transition duration-300 ease-in-out transform hover:scale-105"
           >
             Create Project
           </button>
         </div>
       )}
-
+  
       {/* Display Projects */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {projects.length > 0 ? (
@@ -260,6 +250,7 @@ const Projects = () => {
       </div>
     </div>
   );
+  
 };
 
 export default Projects;

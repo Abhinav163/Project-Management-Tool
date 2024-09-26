@@ -10,7 +10,7 @@ import Signup from './components/Signup';
 import AdminDashboard from './components/AdminDashboard';
 import TeammateDashboard from './components/TeammateDashboard';
 import PrivateRoute from './components/PrivateRoutes';
-import Tasks from './components/Tasks';
+import TaskPage from './components/Tasks';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -66,7 +66,7 @@ const App = () => {
           <Routes>
             <Route path="/projects" element={<Projects/>} />
             <Route path="/login" element={<Login />} />
-            <Route path="/task" element={<Tasks/>}/>
+            <Route path="/tasks" element={<TaskPage/>}/>
             <Route path="/signup" element={<Signup />} />
             <Route path="/admin-dashboard" element={<PrivateRoute element={<AdminDashboard />} requiredRole="admin" />}/>
             <Route path="/teammate-dashboard" element={<PrivateRoute element={<TeammateDashboard />} requiredRole="teammate" />}/>

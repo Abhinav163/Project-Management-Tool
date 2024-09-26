@@ -119,6 +119,7 @@ const TeammateDashboard = () => {
         <div className="mt-2">
           <p className="text-sm text-gray-500">Assigned to: {teammates.find(t => t.id === task.assignedTo)?.username || 'Unknown'}</p>
           <p className="text-sm text-gray-500">Progress: {task.progress || 0}%</p>
+          <p className="text-sm text-gray-500">Due Date: {task.dueDate || 'Not Set'}</p> {/* Display due date */}
         </div>
       )}
     </li>
@@ -169,7 +170,7 @@ const TeammateDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full">
             <h3 className="text-xl font-bold mb-4">{selectedTask.taskName}</h3>
             <p className="mb-4">{selectedTask.description}</p>
-            <p className="mb-4">Deadline: {selectedTask.deadline?.toDate().toLocaleDateString() || 'Not Set'}</p>
+            <p className="mb-4">Due Date: {selectedTask.dueDate || 'Not Set'}</p> {/* Display due date */}
             <button
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
               onClick={() => setSelectedTask(null)}

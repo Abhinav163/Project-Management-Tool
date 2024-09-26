@@ -8,6 +8,7 @@ const AdminDashboard = () => {
   const [taskName, setTaskName] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
+  const [dueDate, setDueDate] = useState(''); // New state for due date
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true); // To show loading when fetching teammates/tasks
 
@@ -42,8 +43,8 @@ const AdminDashboard = () => {
 
   const handleAddTask = async () => {
     setLoading(true);
-    if (taskName === '' || taskDescription === '' || assignedTo === '') {
-      alert('Please provide task name, description, and select a teammate.');
+    if (taskName === '' || taskDescription === '' || assignedTo === '' || dueDate === '') {
+      alert('Please provide task name, description, select a teammate, and set a due date.');
       setLoading(false);
       return;
     }
@@ -55,6 +56,7 @@ const AdminDashboard = () => {
         assignedTo,
         completed: false,
         progress: 0,
+        dueDate, // Include due date
       };
 
       const docRef = await addDoc(collection(db, 'tasks'), newTask);
@@ -69,6 +71,7 @@ const AdminDashboard = () => {
       setTaskName('');
       setTaskDescription('');
       setAssignedTo('');
+      setDueDate(''); // Reset due date
       alert('Task successfully added!');
     } catch (error) {
       console.error('Error adding task: ', error);
@@ -124,15 +127,22 @@ const AdminDashboard = () => {
             <select
               value={assignedTo}
               onChange={(e) => setAssignedTo(e.target.value)}
-              className="mb-4 p-3 border rounded-md focus:ring-2 focus:ring-blue-400"
+              className="mb-4 p-3 border rounded-md ${theme === 'dark' ? 'text-gray-300 bg-gray-700'} focus:ring-2 focus:ring-blue-400"
             >
-              <option value="">Select Teammate</option>
+              <option  value="" >Select Teammate</option>
               {teammates.map((teammate) => (
                 <option key={teammate.id} value={teammate.id}>
                   {teammate.username}
                 </option>
               ))}
             </select>
+            <label className="text-lg font-semibold mb-1">Due Date</label>
+            <input
+              type="date" // Add a date input for due date
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="mb-4 p-3 text-gray-400 border rounded-md focus:ring-2 focus:ring-blue-400"
+            />
             <button
               onClick={handleAddTask}
               className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-200"
@@ -163,6 +173,7 @@ const AdminDashboard = () => {
                     Assigned to:{' '}
                     {teammates.find((tm) => tm.id === task.assignedTo)?.username || 'Unknown'}
                   </p>
+                  <p className="text-sm text-gray-600">Due Date: {task.dueDate}</p> {/* Display due date */}
                   <p className="text-sm text-gray-600">Progress: {task.progress}%</p>
                 </div>
                 <div className="flex space-x-2">

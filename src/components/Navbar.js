@@ -9,12 +9,18 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [username, setUsername] = useState('');
+  const [theme, setTheme] = useState('light');
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const navigate = useNavigate();
-  const location = useLocation(); // Get the current location
+  const location = useLocation();
 
   useEffect(() => {
+    // Check localStorage for theme preference
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+    document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUser(user);
@@ -57,7 +63,7 @@ const Navbar = () => {
         setUser(null);
         setUserRole(null);
         setUsername('');
-        navigate('/login'); // Navigate to the login page
+        navigate('/login');
       })
       .catch((error) => {
         console.error('Error signing out:', error);
@@ -72,12 +78,17 @@ const Navbar = () => {
     navigate(userRole === 'admin' ? '/admin-dashboard' : '/teammate-dashboard');
   };
 
-  // Define paths for each button
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme); // Save the theme to localStorage
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
+
   const dashboardPath = userRole === 'admin' ? '/admin-dashboard' : '/teammate-dashboard';
   const projectsPath = '/projects';
   const tasksPath = '/tasks';
 
-  // Determine if the buttons are active based on the current location
   const isDashboardActive = location.pathname === dashboardPath;
   const isProjectsActive = location.pathname === projectsPath;
   const isTasksActive = location.pathname === tasksPath;
@@ -161,6 +172,11 @@ const Navbar = () => {
               </Link>
             </li>
           )}
+          <li>
+            <button onClick={toggleTheme} className="text-white">
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+          </li>
         </ul>
       </div>
     </nav>
